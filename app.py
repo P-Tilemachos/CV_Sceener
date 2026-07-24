@@ -1,8 +1,9 @@
 """
-AI-Powered CV Screener (Gemini version)
+AI-Powered CV Screener (Groq version)
 -----------------------------------------
 Upload a CV (PDF) and paste a job description. The app calls the
-Google Gemini API (free tier) with a structured prompt and returns:
+Groq API (free, no credit card required) with a structured prompt
+and returns:
   - a match score (0-100)
   - top missing keywords
   - red flags a human reviewer would notice first
@@ -15,12 +16,12 @@ import os
 
 import pdfplumber
 import streamlit as st
-import google.generativeai as genai
+from groq import Groq
 
 # ---------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------
-MODEL_NAME = "gemini-2.0-flash"  # free-tier friendly model
+MODEL_NAME = "llama-3.3-70b-versatile"  # free on Groq, strong general model
 
 st.set_page_config(page_title="AI CV Screener", page_icon="📄", layout="wide")
 
@@ -73,13 +74,17 @@ Rules:
 """
 
 
-def call_gemini(prompt: str, api_key: str) -> dict:
-    """Send the prompt to the Gemini API and parse the JSON response."""
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel(MODEL_NAME)
+def call_groq(prompt: str, api_key: str) -> dict:
+    """Send the prompt to the Groq API and parse the JSON response."""
+    client = Groq(api_key=api_key)
 
-    response = model.generate_content(prompt)
-    raw_text = response.text.strip()
+    response = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3,
+    )
+
+    raw_text = response.choices[0].message.content.strip()
 
     # Defensive cleanup in case the model wraps output in ```json fences
     cleaned = raw_text.replace("```json", "").replace("```", "").strip()
@@ -94,18 +99,18 @@ st.title("📄 AI-Powered CV Screener")
 st.caption(
     "Upload a CV and paste a job description to get a match score, "
     "missing keywords, and first-impression red flags — powered by the "
-    "free Google Gemini API and structured prompting."
+    "free Groq API and structured prompting."
 )
 
 with st.sidebar:
     st.header("Settings")
     api_key = st.text_input(
-        "Google Gemini API key",
+        "Groq API key",
         type="password",
-        help="Get a free key at aistudio.google.com/apikey. Never commit this to GitHub.",
+        help="Get a free key at console.groq.com/keys. Never commit this to GitHub.",
     )
-    api_key = api_key or os.environ.get("GEMINI_API_KEY", "")
-    st.caption("Tip: set GEMINI_API_KEY as an environment variable instead "
+    api_key = api_key or os.environ.get("GROQ_API_KEY", "")
+    st.caption("Tip: set GROQ_API_KEY as an environment variable instead "
                "of pasting it here, so it's never typed into the UI.")
 
 col1, col2 = st.columns(2)
@@ -120,7 +125,7 @@ run_button = st.button("Analyze match", type="primary", use_container_width=True
 
 if run_button:
     if not api_key:
-        st.error("Please provide a Gemini API key in the sidebar.")
+        st.error("Please provide a Groq API key in the sidebar.")
     elif not uploaded_cv:
         st.error("Please upload a CV PDF.")
     elif not job_description.strip():
@@ -132,10 +137,10 @@ if run_button:
         if not cv_text:
             st.error("Could not extract text from this PDF. Try a different file.")
         else:
-            with st.spinner("Calling Gemini API..."):
+            with st.spinner("Calling Groq API..."):
                 prompt = build_prompt(cv_text, job_description)
                 try:
-                    result = call_gemini(prompt, api_key)
+                    result = call_groq(prompt, api_key)
                 except json.JSONDecodeError:
                     st.error("The model did not return valid JSON. Try again.")
                     result = None
