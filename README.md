@@ -1,9 +1,9 @@
 # AI-Powered CV Screener
 
 A small Streamlit app that evaluates a CV against a job description using
-the Claude API, returning a structured match score, missing keywords, and
-first-impression red flags — the kind of quick triage a recruiter does in
-the first few seconds of reading a resume.
+the Google Gemini API, returning a structured match score, missing
+keywords, and first-impression red flags — the kind of quick triage a
+recruiter does in the first few seconds of reading a resume.
 
 ## Why I built this
 
@@ -17,7 +17,7 @@ metrics that aren't actually present in the CV.
 
 1. The user uploads a CV (PDF) and pastes a job description.
 2. `pdfplumber` extracts raw text from the PDF.
-3. A structured prompt asks Claude to return **only** a JSON object with:
+3. A structured prompt asks Gemini to return **only** a JSON object with:
    - `match_score` (0-100)
    - `score_reasoning`
    - `missing_keywords`
@@ -29,18 +29,23 @@ metrics that aren't actually present in the CV.
 
 - Python
 - Streamlit (UI)
-- Anthropic API (Claude) — structured prompting, JSON output
+- Google Gemini API — structured prompting, JSON output
 - pdfplumber (PDF text extraction)
 
 ## Running locally
 
 ```bash
 pip install -r requirements.txt
-export ANTHROPIC_API_KEY="your-key-here"   # or paste it into the sidebar
+export GEMINI_API_KEY="your-key-here"   # or paste it into the sidebar
 streamlit run app.py
 ```
 
-Get an API key at [console.anthropic.com](https://console.anthropic.com).
+Get a free API key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
+
+## Live demo
+
+Deployed for free via Streamlit Community Cloud: [add your live link here
+after deploying]
 
 ## Notes / limitations
 
